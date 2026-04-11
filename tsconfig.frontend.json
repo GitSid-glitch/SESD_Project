@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "module": "None",
+    "rootDir": "frontend",
+    "outDir": "public",
+    "strict": false,
+    "noImplicitAny": false,
+    "noEmitOnError": true,
+    "skipLibCheck": true
+  },
+  "include": ["frontend/**/*.ts"]
+}
