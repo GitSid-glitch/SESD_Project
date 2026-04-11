@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: smart-project-management-system
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: node dist/src/server.js
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: TOKEN_SECRET
+        generateValue: true
