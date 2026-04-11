@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FlowSync Workspace</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <section id="landing-view" class="landing-page">
+      <header class="landing-nav">
+        <div class="brand-block">
+          <span class="brand-mark">F</span>
+          <div>
+            <p class="eyebrow">Plan. Ship. Collaborate.</p>
+            <h1>FlowSync</h1>
+          </div>
+        </div>
+        <button type="button" class="ghost-button" id="jump-to-auth">Open Workspace</button>
+      </header>
+
+      <main class="landing-main">
+        <section class="hero-grid">
+          <article class="hero-copy">
+            <p class="eyebrow accent">Project Delivery Hub</p>
+            <h2>One workspace for planning, execution, and team conversations.</h2>
+            <p>
+              FlowSync gives each role a different job to do. Admins manage people and permissions,
+              managers plan delivery, and members move work forward through task updates and threaded comments.
+            </p>
+            <div class="hero-actions">
+              <button type="button" id="hero-login-button">Login to Demo</button>
+              <a href="#role-showcase" class="text-link">See role workflows</a>
+            </div>
+            <div class="hero-stats">
+              <article class="mini-stat">
+                <span>Admin</span>
+                <strong>User roles and oversight</strong>
+              </article>
+              <article class="mini-stat">
+                <span>Manager</span>
+                <strong>Projects, sprints, assignment</strong>
+              </article>
+              <article class="mini-stat">
+                <span>Member</span>
+                <strong>Status updates and discussion</strong>
+              </article>
+            </div>
+          </article>
+
+          <aside class="auth-shell card" id="auth-anchor">
+            <div class="section-heading">
+              <h3>Access Workspace</h3>
+              <p>Try the seeded demo accounts or create a member account.</p>
+            </div>
+
+            <div class="tabs">
+              <button type="button" class="tab active" data-target="login-form">Login</button>
+              <button type="button" class="tab" data-target="register-form">Register</button>
+            </div>
+
+            <form id="login-form" class="stack">
+              <label>Email <input name="email" type="email" value="manager@sesd.local" required /></label>
+              <label>Password <input name="password" type="password" value="Manager@123" required /></label>
+              <button type="submit">Login</button>
+            </form>
+
+            <form id="register-form" class="stack hidden">
+              <label>Name <input name="name" type="text" required /></label>
+              <label>Email <input name="email" type="email" required /></label>
+              <label>Password <input name="password" type="password" required /></label>
+              <p class="helper-copy">New signups join as members. Admins can promote users later.</p>
+              <button type="submit">Create Member Account</button>
+            </form>
+
+            <div class="demo-credentials">
+              <p>Demo accounts</p>
+              <span>Admin: admin@sesd.local / Admin@123</span>
+              <span>Manager: manager@sesd.local / Manager@123</span>
+              <span>Member: member@sesd.local / Member@123</span>
+            </div>
+          </aside>
+        </section>
+
+        <section class="info-section" id="role-showcase">
+          <div class="section-heading large">
+            <p class="eyebrow accent">Role Workflows</p>
+            <h3>Each role sees a different part of the operating system.</h3>
+          </div>
+          <div class="role-grid">
+            <article class="role-card card">
+              <span class="role-label">Admin</span>
+              <h4>Owns access and governance</h4>
+              <p>Reviews users, changes roles, tracks high-level activity, and keeps the workspace structured.</p>
+            </article>
+            <article class="role-card card">
+              <span class="role-label">Manager</span>
+              <h4>Owns planning and coordination</h4>
+              <p>Creates projects, schedules sprints, adds team members, and assigns tasks to the right people.</p>
+            </article>
+            <article class="role-card card">
+              <span class="role-label">Member</span>
+              <h4>Owns execution and updates</h4>
+              <p>Works from a personal task board, updates progress, shares blockers, and comments directly on tasks.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="workflow-section">
+          <div class="section-heading large">
+            <p class="eyebrow accent">How Work Moves</p>
+            <h3>Projects become sprints, sprints become tasks, tasks become conversations.</h3>
+          </div>
+          <div class="workflow-grid">
+            <article class="workflow-card card">
+              <strong>1</strong>
+              <h4>Set up the workspace</h4>
+              <p>Admins define who can do what. Managers create delivery spaces and bring the right teammates in.</p>
+            </article>
+            <article class="workflow-card card">
+              <strong>2</strong>
+              <h4>Assign and execute</h4>
+              <p>Managers create work with deadlines and ownership. Members get a focused board of what they should do next.</p>
+            </article>
+            <article class="workflow-card card">
+              <strong>3</strong>
+              <h4>Communicate on the work</h4>
+              <p>Status changes and comments keep everyone aligned without leaving the task context.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <section id="workspace-view" class="workspace hidden">
+      <header class="workspace-header">
+        <div class="workspace-identity">
+          <div class="brand-block compact">
+            <span class="brand-mark">F</span>
+            <div>
+              <p class="eyebrow">Team Workspace</p>
+              <h2>FlowSync</h2>
+            </div>
+          </div>
+          <div>
+            <p class="eyebrow">Logged In As</p>
+            <h3 id="workspace-user-name">Workspace</h3>
+          </div>
+        </div>
+        <div class="workspace-actions">
+          <span id="workspace-role-chip" class="role-chip">MEMBER</span>
+          <button type="button" id="refresh-dashboard" class="ghost-button">Refresh</button>
+          <button type="button" id="logout-button" class="ghost-button">Logout</button>
+        </div>
+      </header>
+
+      <nav class="nav-strip" id="panel-nav"></nav>
+
+      <main class="workspace-main">
+        <section id="overview-panel" class="panel card">
+          <div class="section-heading large">
+            <p class="eyebrow accent">Overview</p>
+            <h3 id="role-brief-heading">Workspace snapshot</h3>
+            <p id="role-brief-copy"></p>
+          </div>
+
+          <div class="metrics-grid">
+            <article class="metric-card">
+              <span>Projects</span>
+              <strong id="metric-projects">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>Total Tasks</span>
+              <strong id="metric-tasks">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>Assigned To Me</span>
+              <strong id="metric-assigned">0</strong>
+            </article>
+            <article class="metric-card">
+              <span>Completed</span>
+              <strong id="metric-completed">0</strong>
+            </article>
+          </div>
+
+          <div class="two-column-grid">
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Current Projects</h4>
+                <p>Projects you can access right now.</p>
+              </div>
+              <div id="overview-projects" class="stacked-list"></div>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Profile</h4>
+                <p>Keep your personal details current.</p>
+              </div>
+              <form id="profile-form" class="stack compact">
+                <label>Name <input id="profile-name" name="name" type="text" required /></label>
+                <label>Email <input id="profile-email" name="email" type="email" required /></label>
+                <button type="submit">Update Profile</button>
+              </form>
+            </article>
+          </div>
+
+          <div class="two-column-grid">
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Role Focus</h4>
+                <p>What this role is expected to do in the app.</p>
+              </div>
+              <div id="role-focus-list" class="stacked-list"></div>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Inbox Preview</h4>
+                <p>Recent updates that need your attention.</p>
+              </div>
+              <div id="overview-notifications" class="stacked-list"></div>
+            </article>
+          </div>
+
+          <div class="two-column-grid">
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Project Health</h4>
+                <p>Progress and sprint activity across your projects.</p>
+              </div>
+              <div id="project-health-list" class="stacked-list"></div>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Task Insights</h4>
+                <p>Status split and workload distribution.</p>
+              </div>
+              <div id="insights-list" class="stacked-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="planning-panel" class="panel card hidden">
+          <div class="section-heading large">
+            <p class="eyebrow accent">Planning Console</p>
+            <h3>Set up projects, sprints, tasks, and ownership.</h3>
+            <p>Managers and admins use this area to shape the delivery plan.</p>
+          </div>
+
+          <div id="planning-form-grid" class="planning-grid">
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Create Project</h4>
+              </div>
+              <form id="project-form" class="stack compact">
+                <label>Title <input name="title" type="text" required /></label>
+                <label>Description <textarea name="description" rows="3" required></textarea></label>
+                <button type="submit">Create Project</button>
+              </form>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Create Sprint</h4>
+              </div>
+              <form id="sprint-form" class="stack compact">
+                <label>Project <select id="sprint-project-select" name="projectId" required></select></label>
+                <label>Name <input name="name" type="text" required /></label>
+                <label>Start Date <input name="startDate" type="date" required /></label>
+                <label>End Date <input name="endDate" type="date" required /></label>
+                <button type="submit">Create Sprint</button>
+              </form>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Create Task</h4>
+              </div>
+              <form id="task-form" class="stack compact">
+                <label>Project <select id="task-project-select" name="projectId" required></select></label>
+                <label>Sprint <select id="task-sprint-select" name="sprintId"></select></label>
+                <label>Title <input name="title" type="text" required /></label>
+                <label>Description <textarea name="description" rows="3" required></textarea></label>
+                <label>
+                  Priority
+                  <select name="priority">
+                    <option value="LOW">Low</option>
+                    <option value="MEDIUM" selected>Medium</option>
+                    <option value="HIGH">High</option>
+                  </select>
+                </label>
+                <label>Due Date <input name="dueDate" type="date" /></label>
+                <label>Assign To <select id="task-assignee-select" name="assignedTo"></select></label>
+                <button type="submit">Create Task</button>
+              </form>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Add Project Member</h4>
+              </div>
+              <form id="member-form" class="stack compact">
+                <label>Project <select id="member-project-select" name="projectId" required></select></label>
+                <label>User <select id="member-user-select" name="userId" required></select></label>
+                <button type="submit">Add Member</button>
+              </form>
+            </article>
+          </div>
+
+          <div class="two-column-grid">
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Project Controls</h4>
+                <p>Update lifecycle and archive completed initiatives.</p>
+              </div>
+              <div id="project-management-list" class="stacked-list"></div>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Sprint Controls</h4>
+                <p>Move sprints from planning to active to completed.</p>
+              </div>
+              <div id="sprint-management-list" class="stacked-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section id="work-panel" class="panel card hidden">
+          <div class="section-heading large">
+            <p class="eyebrow accent">Execution Board</p>
+            <h3 id="work-panel-title">Tasks in motion</h3>
+            <p id="work-panel-copy"></p>
+          </div>
+
+          <div id="task-filters" class="filter-row"></div>
+          <div id="tasks-board" class="kanban-grid"></div>
+        </section>
+
+        <section id="team-panel" class="panel card hidden">
+          <div class="section-heading large">
+            <p class="eyebrow accent">Team Space</p>
+            <h3 id="team-panel-title">People and collaboration</h3>
+            <p id="team-panel-copy"></p>
+          </div>
+          <div id="team-content" class="stacked-list"></div>
+        </section>
+
+        <section id="inbox-panel" class="panel card hidden">
+          <div class="section-heading large">
+            <p class="eyebrow accent">Inbox</p>
+            <h3>Notifications and activity</h3>
+            <p>Recent signals from the workspace.</p>
+          </div>
+
+          <div class="two-column-grid">
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Notifications</h4>
+              </div>
+              <div id="notifications-list" class="stacked-list"></div>
+            </article>
+
+            <article class="subpanel">
+              <div class="section-heading">
+                <h4>Activity Feed</h4>
+              </div>
+              <div id="activity-list" class="stacked-list"></div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </section>
+
+    <div id="toast" class="toast hidden"></div>
+    <script src="/app.js"></script>
+  </body>
+</html>
