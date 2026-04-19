@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const { DatabaseSync } = require("node:sqlite");
 const { Pool } = require("pg");
 const config = require("../config");
 
@@ -62,6 +61,8 @@ class DataStore {
     if (this.sqliteDb) {
       return;
     }
+
+    const { DatabaseSync } = require("node:sqlite");
 
     const dirPath = path.dirname(this.filePath);
     if (!fs.existsSync(dirPath)) {
