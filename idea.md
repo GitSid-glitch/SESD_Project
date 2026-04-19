@@ -56,8 +56,8 @@ To design and implement a full-stack application with primary focus on backend a
 
 ## 5. Proposed Tech Stack
 
-Backend: Node.js + Express  
-Database: PostgreSQL  
-ORM: Prisma / Sequelize  
-Authentication: JWT  
-Frontend: React (minimal UI for interaction)
+Backend: Node.js + TypeScript with layered Controller-Service-Repository architecture  
+Database: PostgreSQL for deployment, with SQLite fallback for local development  
+Persistence Layer: Custom repository-based datastore abstraction  
+Authentication: Token-based authentication with signed login tokens  
+Frontend: HTML, CSS, and TypeScript-compiled browser interface

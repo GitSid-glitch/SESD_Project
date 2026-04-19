@@ -1,4 +1,34 @@
-// @ts-nocheck
+type UserRole = "ADMIN" | "MANAGER" | "MEMBER";
+type FormValues = Record<string, string>;
+type ApiOptions = {
+  method?: string;
+  body?: unknown;
+};
+
+let toastTimeoutId: number | undefined;
+
+function getRequiredElement<T extends HTMLElement>(id: string): T {
+  const element = document.getElementById(id);
+  if (!element) {
+    throw new Error(`Missing required element: ${id}`);
+  }
+  return element as T;
+}
+
+function asElement(target: EventTarget | null): Element | null {
+  return target instanceof Element ? target : null;
+}
+
+function asForm(target: EventTarget | null): HTMLFormElement {
+  if (!(target instanceof HTMLFormElement)) {
+    throw new Error("Expected form target");
+  }
+  return target;
+}
+
+function toFormValues(form: HTMLFormElement): FormValues {
+  return Object.fromEntries(Array.from(new FormData(form).entries()).map(([key, value]) => [key, String(value)]));
+}
 
 const state = {
   token: localStorage.getItem("spms_token") || null,
@@ -13,43 +43,43 @@ const state = {
 };
 
 const elements = {
-  landingView: document.getElementById("landing-view"),
-  workspaceView: document.getElementById("workspace-view"),
-  toast: document.getElementById("toast"),
-  panelNav: document.getElementById("panel-nav"),
-  workspaceUserName: document.getElementById("workspace-user-name"),
-  workspaceRoleChip: document.getElementById("workspace-role-chip"),
-  roleBriefHeading: document.getElementById("role-brief-heading"),
-  roleBriefCopy: document.getElementById("role-brief-copy"),
-  overviewProjects: document.getElementById("overview-projects"),
-  roleFocusList: document.getElementById("role-focus-list"),
-  overviewNotifications: document.getElementById("overview-notifications"),
-  projectHealthList: document.getElementById("project-health-list"),
-  insightsList: document.getElementById("insights-list"),
-  notificationsList: document.getElementById("notifications-list"),
-  activityList: document.getElementById("activity-list"),
-  projectManagementList: document.getElementById("project-management-list"),
-  sprintManagementList: document.getElementById("sprint-management-list"),
-  tasksBoard: document.getElementById("tasks-board"),
-  taskFilters: document.getElementById("task-filters"),
-  teamContent: document.getElementById("team-content"),
-  teamPanelTitle: document.getElementById("team-panel-title"),
-  teamPanelCopy: document.getElementById("team-panel-copy"),
-  workPanelTitle: document.getElementById("work-panel-title"),
-  workPanelCopy: document.getElementById("work-panel-copy"),
-  profileForm: document.getElementById("profile-form"),
-  projectForm: document.getElementById("project-form"),
-  sprintForm: document.getElementById("sprint-form"),
-  taskForm: document.getElementById("task-form"),
-  memberForm: document.getElementById("member-form"),
-  sprintProjectSelect: document.getElementById("sprint-project-select"),
-  taskProjectSelect: document.getElementById("task-project-select"),
-  taskSprintSelect: document.getElementById("task-sprint-select"),
-  taskAssigneeSelect: document.getElementById("task-assignee-select"),
-  memberProjectSelect: document.getElementById("member-project-select"),
-  memberUserSelect: document.getElementById("member-user-select"),
-  profileName: document.getElementById("profile-name"),
-  profileEmail: document.getElementById("profile-email")
+  landingView: getRequiredElement<HTMLElement>("landing-view"),
+  workspaceView: getRequiredElement<HTMLElement>("workspace-view"),
+  toast: getRequiredElement<HTMLElement>("toast"),
+  panelNav: getRequiredElement<HTMLElement>("panel-nav"),
+  workspaceUserName: getRequiredElement<HTMLElement>("workspace-user-name"),
+  workspaceRoleChip: getRequiredElement<HTMLElement>("workspace-role-chip"),
+  roleBriefHeading: getRequiredElement<HTMLElement>("role-brief-heading"),
+  roleBriefCopy: getRequiredElement<HTMLElement>("role-brief-copy"),
+  overviewProjects: getRequiredElement<HTMLElement>("overview-projects"),
+  roleFocusList: getRequiredElement<HTMLElement>("role-focus-list"),
+  overviewNotifications: getRequiredElement<HTMLElement>("overview-notifications"),
+  projectHealthList: getRequiredElement<HTMLElement>("project-health-list"),
+  insightsList: getRequiredElement<HTMLElement>("insights-list"),
+  notificationsList: getRequiredElement<HTMLElement>("notifications-list"),
+  activityList: getRequiredElement<HTMLElement>("activity-list"),
+  projectManagementList: getRequiredElement<HTMLElement>("project-management-list"),
+  sprintManagementList: getRequiredElement<HTMLElement>("sprint-management-list"),
+  tasksBoard: getRequiredElement<HTMLElement>("tasks-board"),
+  taskFilters: getRequiredElement<HTMLElement>("task-filters"),
+  teamContent: getRequiredElement<HTMLElement>("team-content"),
+  teamPanelTitle: getRequiredElement<HTMLElement>("team-panel-title"),
+  teamPanelCopy: getRequiredElement<HTMLElement>("team-panel-copy"),
+  workPanelTitle: getRequiredElement<HTMLElement>("work-panel-title"),
+  workPanelCopy: getRequiredElement<HTMLElement>("work-panel-copy"),
+  profileForm: getRequiredElement<HTMLFormElement>("profile-form"),
+  projectForm: getRequiredElement<HTMLFormElement>("project-form"),
+  sprintForm: getRequiredElement<HTMLFormElement>("sprint-form"),
+  taskForm: getRequiredElement<HTMLFormElement>("task-form"),
+  memberForm: getRequiredElement<HTMLFormElement>("member-form"),
+  sprintProjectSelect: getRequiredElement<HTMLSelectElement>("sprint-project-select"),
+  taskProjectSelect: getRequiredElement<HTMLSelectElement>("task-project-select"),
+  taskSprintSelect: getRequiredElement<HTMLSelectElement>("task-sprint-select"),
+  taskAssigneeSelect: getRequiredElement<HTMLSelectElement>("task-assignee-select"),
+  memberProjectSelect: getRequiredElement<HTMLSelectElement>("member-project-select"),
+  memberUserSelect: getRequiredElement<HTMLSelectElement>("member-user-select"),
+  profileName: getRequiredElement<HTMLInputElement>("profile-name"),
+  profileEmail: getRequiredElement<HTMLInputElement>("profile-email")
 };
 
 const roleConfig = {
@@ -121,43 +151,43 @@ bindStaticEvents();
 loadWorkspace().catch(() => logout(false));
 
 function initializeAuthTabs() {
-  document.querySelectorAll(".tab").forEach((button) => {
+  document.querySelectorAll<HTMLElement>(".tab").forEach((button) => {
     button.addEventListener("click", () => {
       document.querySelectorAll(".tab").forEach((item) => item.classList.remove("active"));
       document.querySelectorAll("#login-form, #register-form").forEach((form) => form.classList.add("hidden"));
       button.classList.add("active");
-      document.getElementById(button.dataset.target).classList.remove("hidden");
+      getRequiredElement<HTMLElement>(button.dataset.target || "").classList.remove("hidden");
     });
   });
 }
 
 function bindStaticEvents() {
-  document.getElementById("jump-to-auth").addEventListener("click", () => {
-    document.getElementById("auth-anchor").scrollIntoView({ behavior: "smooth", block: "center" });
+  getRequiredElement<HTMLButtonElement>("jump-to-auth").addEventListener("click", () => {
+    getRequiredElement<HTMLElement>("auth-anchor").scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
-  document.getElementById("hero-login-button").addEventListener("click", () => {
-    document.getElementById("auth-anchor").scrollIntoView({ behavior: "smooth", block: "center" });
+  getRequiredElement<HTMLButtonElement>("hero-login-button").addEventListener("click", () => {
+    getRequiredElement<HTMLElement>("auth-anchor").scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
-  document.getElementById("login-form").addEventListener("submit", async (event) => {
+  getRequiredElement<HTMLFormElement>("login-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = Object.fromEntries(new FormData(event.target).entries());
+    const formData = toFormValues(asForm(event.target));
     await authenticate("/api/auth/login", formData);
   });
 
-  document.getElementById("register-form").addEventListener("submit", async (event) => {
+  getRequiredElement<HTMLFormElement>("register-form").addEventListener("submit", async (event) => {
     event.preventDefault();
-    const formData = Object.fromEntries(new FormData(event.target).entries());
+    const formData = toFormValues(asForm(event.target));
     await authenticate("/api/auth/register", formData);
   });
 
-  document.getElementById("refresh-dashboard").addEventListener("click", () => loadWorkspace());
-  document.getElementById("logout-button").addEventListener("click", () => logout(true));
+  getRequiredElement<HTMLButtonElement>("refresh-dashboard").addEventListener("click", () => loadWorkspace());
+  getRequiredElement<HTMLButtonElement>("logout-button").addEventListener("click", () => logout(true));
 
   elements.profileForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const body = Object.fromEntries(new FormData(event.target).entries());
+    const body = toFormValues(asForm(event.target));
     const updatedUser = await api("/api/users/me", { method: "PUT", body });
     state.currentUser = updatedUser;
     localStorage.setItem("spms_user", JSON.stringify(updatedUser));
@@ -167,32 +197,35 @@ function bindStaticEvents() {
 
   elements.projectForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const body = Object.fromEntries(new FormData(event.target).entries());
+    const form = asForm(event.target);
+    const body = toFormValues(form);
     await api("/api/projects", { method: "POST", body });
-    event.target.reset();
+    form.reset();
     showToast("Project created");
     await loadWorkspace();
   });
 
   elements.sprintForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const body = Object.fromEntries(new FormData(event.target).entries());
+    const form = asForm(event.target);
+    const body = toFormValues(form);
     await api("/api/sprints", { method: "POST", body });
-    event.target.reset();
+    form.reset();
     showToast("Sprint created");
     await loadWorkspace();
   });
 
   elements.taskForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const body = Object.fromEntries(new FormData(event.target).entries());
+    const form = asForm(event.target);
+    const body = toFormValues(form);
     ["sprintId", "assignedTo", "dueDate"].forEach((field) => {
       if (!body[field]) {
         delete body[field];
       }
     });
     await api("/api/tasks", { method: "POST", body });
-    event.target.reset();
+    form.reset();
     syncPlanningSelects();
     showToast("Task created");
     await loadWorkspace();
@@ -200,16 +233,17 @@ function bindStaticEvents() {
 
   elements.memberForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const body = Object.fromEntries(new FormData(event.target).entries());
+    const form = asForm(event.target);
+    const body = toFormValues(form);
     await api(`/api/projects/${body.projectId}/members`, { method: "POST", body: { userId: body.userId } });
-    event.target.reset();
+    form.reset();
     syncPlanningSelects();
     showToast("Member added to project");
     await loadWorkspace();
   });
 
   elements.panelNav.addEventListener("click", (event) => {
-    const button = event.target.closest(".nav-button");
+    const button = asElement(event.target)?.closest<HTMLElement>(".nav-button");
     if (!button) {
       return;
     }
@@ -218,7 +252,7 @@ function bindStaticEvents() {
   });
 
   elements.taskFilters.addEventListener("click", (event) => {
-    const button = event.target.closest(".filter-chip");
+    const button = asElement(event.target)?.closest<HTMLElement>(".filter-chip");
     if (!button) {
       return;
     }
@@ -228,62 +262,69 @@ function bindStaticEvents() {
   });
 
   elements.workspaceView.addEventListener("change", async (event) => {
-    if (event.target.id === "task-project-select") {
-      syncTaskProjectContext(event.target.value);
+    const target = asElement(event.target);
+    if (!(target instanceof HTMLElement)) {
       return;
     }
 
-    if (event.target.id === "member-project-select") {
-      syncMemberProjectContext(event.target.value);
+    if (target.id === "task-project-select" && target instanceof HTMLSelectElement) {
+      syncTaskProjectContext(target.value);
       return;
     }
 
-    if (event.target.classList.contains("task-status-select")) {
-      await handleTaskStatusChange(event.target);
+    if (target.id === "member-project-select" && target instanceof HTMLSelectElement) {
+      syncMemberProjectContext(target.value);
       return;
     }
 
-    if (event.target.classList.contains("task-assignee-select")) {
-      await handleTaskAssigneeChange(event.target);
+    if (target.classList.contains("task-status-select") && target instanceof HTMLSelectElement) {
+      await handleTaskStatusChange(target);
       return;
     }
 
-    if (event.target.classList.contains("role-select")) {
-      await handleRoleChange(event.target);
+    if (target.classList.contains("task-assignee-select") && target instanceof HTMLSelectElement) {
+      await handleTaskAssigneeChange(target);
       return;
     }
 
-    if (event.target.classList.contains("project-status-select")) {
-      await handleProjectStatusChange(event.target);
+    if (target.classList.contains("role-select") && target instanceof HTMLSelectElement) {
+      await handleRoleChange(target);
       return;
     }
 
-    if (event.target.classList.contains("sprint-status-select")) {
-      await handleSprintStatusChange(event.target);
+    if (target.classList.contains("project-status-select") && target instanceof HTMLSelectElement) {
+      await handleProjectStatusChange(target);
+      return;
+    }
+
+    if (target.classList.contains("sprint-status-select") && target instanceof HTMLSelectElement) {
+      await handleSprintStatusChange(target);
     }
   });
 
   elements.workspaceView.addEventListener("click", async (event) => {
-    const archiveButton = event.target.closest("[data-action='archive-project']");
+    const eventElement = asElement(event.target);
+    const archiveButton = eventElement?.closest<HTMLElement>("[data-action='archive-project']");
     if (archiveButton) {
       await handleProjectArchive(archiveButton.dataset.projectId);
       return;
     }
 
-    const deleteTaskButton = event.target.closest("[data-action='delete-task']");
+    const deleteTaskButton = eventElement?.closest<HTMLElement>("[data-action='delete-task']");
     if (deleteTaskButton) {
       await handleTaskDelete(deleteTaskButton.dataset.taskId);
       return;
     }
 
-    const deactivateUserButton = event.target.closest("[data-action='deactivate-user']");
+    const deactivateUserButton = eventElement?.closest<HTMLElement>("[data-action='deactivate-user']");
     if (deactivateUserButton) {
       await handleUserDeactivate(deactivateUserButton.dataset.userId);
     }
   });
 
   elements.workspaceView.addEventListener("submit", async (event) => {
-    const commentForm = event.target.closest(".task-comment-form");
+    const eventElement = asElement(event.target);
+    const commentForm = eventElement?.closest<HTMLFormElement>(".task-comment-form");
     if (!commentForm) {
       return;
     }
@@ -291,14 +332,15 @@ function bindStaticEvents() {
     event.preventDefault();
     const taskId = commentForm.dataset.taskId;
     const content = new FormData(commentForm).get("content");
-    if (!content || !content.trim()) {
+    const commentText = typeof content === "string" ? content.trim() : "";
+    if (!commentText) {
       showToast("Comment cannot be empty", true);
       return;
     }
 
     await api(`/api/tasks/${taskId}/comments`, {
       method: "POST",
-      body: { content: content.trim() }
+      body: { content: commentText }
     });
 
     showToast("Comment added");
@@ -318,8 +360,8 @@ async function authenticate(url, payload) {
   await loadWorkspace();
 }
 
-async function api(url, options = {}, authRequired = true) {
-  const request = {
+async function api(url: string, options: ApiOptions = {}, authRequired = true) {
+  const request: RequestInit = {
     method: options.method || "GET",
     headers: {
       "Content-Type": "application/json"
@@ -327,7 +369,7 @@ async function api(url, options = {}, authRequired = true) {
   };
 
   if (authRequired && state.token) {
-    request.headers.Authorization = `Bearer ${state.token}`;
+    (request.headers as Record<string, string>).Authorization = `Bearer ${state.token}`;
   }
 
   if (options.body) {
@@ -434,10 +476,10 @@ function updatePanelVisibility() {
 
 function renderOverview() {
   const metrics = state.dashboard.metrics;
-  document.getElementById("metric-projects").textContent = metrics.totalProjects;
-  document.getElementById("metric-tasks").textContent = metrics.totalTasks;
-  document.getElementById("metric-assigned").textContent = metrics.assignedTasks;
-  document.getElementById("metric-completed").textContent = metrics.completedTasks;
+  getRequiredElement<HTMLElement>("metric-projects").textContent = String(metrics.totalProjects);
+  getRequiredElement<HTMLElement>("metric-tasks").textContent = String(metrics.totalTasks);
+  getRequiredElement<HTMLElement>("metric-assigned").textContent = String(metrics.assignedTasks);
+  getRequiredElement<HTMLElement>("metric-completed").textContent = String(metrics.completedTasks);
 
   elements.profileName.value = state.currentUser.name || "";
   elements.profileEmail.value = state.currentUser.email || "";
@@ -463,7 +505,7 @@ function renderOverview() {
 
 function renderPlanningPanel() {
   const canPlan = ["ADMIN", "MANAGER"].includes(state.currentUser.role);
-  document.getElementById("planning-panel").classList.toggle("hidden", !canPlan || state.activePanel !== "planning");
+  getRequiredElement<HTMLElement>("planning-panel").classList.toggle("hidden", !canPlan || state.activePanel !== "planning");
   if (!canPlan) {
     return;
   }
@@ -770,7 +812,7 @@ function renderProjectHealthCard(project) {
 function renderInsightCards() {
   const statusBreakdown = state.dashboard.statusBreakdown || {};
   const workload = state.dashboard.teamWorkload || {};
-  const topWorkload = Object.entries(workload)
+  const topWorkload = (Object.entries(workload) as Array<[string, number]>)
     .sort((left, right) => right[1] - left[1])
     .slice(0, 5)
     .map(([name, count]) => `<span class="chip">${escapeHtml(name)} · ${count} tasks</span>`)
@@ -895,7 +937,7 @@ function syncMemberProjectContext(projectId) {
     : `<option value="">No eligible users</option>`;
 }
 
-async function handleTaskStatusChange(select) {
+async function handleTaskStatusChange(select: HTMLSelectElement) {
   await api(`/api/tasks/${select.dataset.taskId}`, {
     method: "PUT",
     body: { status: select.value }
@@ -904,7 +946,7 @@ async function handleTaskStatusChange(select) {
   await loadWorkspace();
 }
 
-async function handleTaskAssigneeChange(select) {
+async function handleTaskAssigneeChange(select: HTMLSelectElement) {
   const value = select.value || null;
   await api(`/api/tasks/${select.dataset.taskId}`, {
     method: "PUT",
@@ -914,7 +956,7 @@ async function handleTaskAssigneeChange(select) {
   await loadWorkspace();
 }
 
-async function handleRoleChange(select) {
+async function handleRoleChange(select: HTMLSelectElement) {
   await api(`/api/users/${select.dataset.userId}/role`, {
     method: "PATCH",
     body: { roleName: select.value }
@@ -923,7 +965,7 @@ async function handleRoleChange(select) {
   await loadWorkspace();
 }
 
-async function handleProjectStatusChange(select) {
+async function handleProjectStatusChange(select: HTMLSelectElement) {
   await api(`/api/projects/${select.dataset.projectId}`, {
     method: "PUT",
     body: { status: select.value }
@@ -932,7 +974,7 @@ async function handleProjectStatusChange(select) {
   await loadWorkspace();
 }
 
-async function handleSprintStatusChange(select) {
+async function handleSprintStatusChange(select: HTMLSelectElement) {
   await api(`/api/sprints/${select.dataset.sprintId}/status`, {
     method: "PATCH",
     body: { status: select.value }
@@ -1036,8 +1078,8 @@ function showToast(message, isError = false) {
   elements.toast.textContent = message;
   elements.toast.style.background = isError ? "var(--danger)" : "var(--success)";
   elements.toast.classList.remove("hidden");
-  window.clearTimeout(showToast.timeoutId);
-  showToast.timeoutId = window.setTimeout(() => elements.toast.classList.add("hidden"), 2600);
+  window.clearTimeout(toastTimeoutId);
+  toastTimeoutId = window.setTimeout(() => elements.toast.classList.add("hidden"), 2600);
 }
 
 function logout(showMessage = true) {
