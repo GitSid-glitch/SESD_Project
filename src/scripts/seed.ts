@@ -7,10 +7,10 @@ const projectRepository = require("../repositories/project-repository");
 const userRepository = require("../repositories/user-repository");
 const roleRepository = require("../repositories/role-repository");
 
-function ensureUser(details) {
-  const existing = userRepository.findByEmail(details.email);
+async function ensureUser(details) {
+  const existing = await userRepository.findByEmail(details.email);
   if (existing) {
-    const role = roleRepository.findById(existing.roleId);
+    const role = await roleRepository.findById(existing.roleId);
     return {
       id: existing.id,
       name: existing.name,
@@ -19,36 +19,36 @@ function ensureUser(details) {
     };
   }
 
-  return authService.register(details).user;
+  return (await authService.register(details)).user;
 }
 
-function runSeed() {
-  dataStore.initialize();
-  authService.ensureDefaultRoles();
+async function runSeed() {
+  await dataStore.initialize();
+  await authService.ensureDefaultRoles();
 
-  const admin = ensureUser({
+  const admin = await ensureUser({
     name: "Admin User",
     email: "admin@sesd.local",
     password: "Admin@123",
     roleName: "ADMIN"
   });
 
-  const manager = ensureUser({
+  const manager = await ensureUser({
     name: "Project Manager",
     email: "manager@sesd.local",
     password: "Manager@123",
     roleName: "MANAGER"
   });
 
-  const member = ensureUser({
+  const member = await ensureUser({
     name: "Team Member",
     email: "member@sesd.local",
     password: "Member@123",
     roleName: "MEMBER"
   });
 
-  if (projectRepository.findAll().length === 0) {
-    const createdProject = projectService.createProject(
+  if ((await projectRepository.findAll()).length === 0) {
+    const createdProject = await projectService.createProject(
       {
         title: "Smart PM Core Platform",
         description: "Backend-focused project planning and task orchestration platform."
@@ -56,9 +56,9 @@ function runSeed() {
       manager
     );
 
-    projectService.addMember(createdProject.id, member.id, manager);
+    await projectService.addMember(createdProject.id, member.id, manager);
 
-    const sprint = sprintService.createSprint(
+    const sprint = await sprintService.createSprint(
       {
         name: "Sprint 1",
         startDate: "2026-04-20",
@@ -68,9 +68,9 @@ function runSeed() {
       manager
     );
 
-    sprintService.updateStatus(sprint.id, "ACTIVE", manager);
+    await sprintService.updateStatus(sprint.id, "ACTIVE", manager);
 
-    const task = taskService.createTask(
+    const task = await taskService.createTask(
       {
         title: "Implement authentication module",
         description: "Build signed-token auth, secure password hashing, and login flows.",
@@ -83,9 +83,15 @@ function runSeed() {
       manager
     );
 
-    taskService.addComment(task.id, "Initial auth module drafted and ready for review.", member);
+    await taskService.addComment(task.id, "Initial auth module drafted and ready for review.", member);
   }
 }
 
-runSeed();
-console.log("Seed completed. Demo credentials created.");
+runSeed()
+  .then(() => {
+    console.log("Seed completed. Demo credentials created.");
+  })
+  .catch((error) => {
+    console.error("Seed failed.", error);
+    process.exit(1);
+  });

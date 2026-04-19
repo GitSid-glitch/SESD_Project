@@ -4,8 +4,10 @@ services:
     env: node
     plan: free
     buildCommand: npm install && npm run build
-    startCommand: node dist/src/server.js
+    startCommand: node dist/src/scripts/seed.js && node dist/src/server.js
     envVars:
+      - key: DATABASE_URL
+        sync: false
       - key: HOST
         value: 0.0.0.0
       - key: PORT

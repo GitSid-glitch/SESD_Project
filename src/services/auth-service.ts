@@ -7,47 +7,47 @@ const activityLogService = require("./activity-log-service");
 
 class AuthService {
   ensureDefaultRoles() {
-    ["ADMIN", "MANAGER", "MEMBER"].forEach((name) => {
-      if (!roleRepository.findByName(name)) {
-        roleRepository.create({ name });
+    return Promise.all(["ADMIN", "MANAGER", "MEMBER"].map(async (name) => {
+      if (!(await roleRepository.findByName(name))) {
+        await roleRepository.create({ name });
       }
-    });
+    }));
   }
 
-  register({ name, email, password, roleName = "MEMBER" }) {
-    this.ensureDefaultRoles();
-    if (userRepository.findByEmail(email)) {
+  async register({ name, email, password, roleName = "MEMBER" }) {
+    await this.ensureDefaultRoles();
+    if (await userRepository.findByEmail(email)) {
       throw new HttpError(409, "Email is already registered");
     }
 
-    const role = roleRepository.findByName(roleName);
+    const role = await roleRepository.findByName(roleName);
     if (!role) {
       throw new HttpError(400, "Invalid role selected");
     }
 
-    const user = userRepository.create({
+    const user = await userRepository.create({
       name,
       email,
       password: hashPassword(password),
       roleId: role.id
     });
 
-    activityLogService.logAction(`Registered user ${user.email}`, user.id);
+    await activityLogService.logAction(`Registered user ${user.email}`, user.id);
     return this.buildAuthResponse(user);
   }
 
-  login({ email, password }) {
-    const user = userRepository.findByEmail(email);
+  async login({ email, password }) {
+    const user = await userRepository.findByEmail(email);
     if (!user || user.isDeleted || !verifyPassword(password, user.password)) {
       throw new HttpError(401, "Invalid email or password");
     }
 
-    activityLogService.logAction(`Logged in user ${user.email}`, user.id);
+    await activityLogService.logAction(`Logged in user ${user.email}`, user.id);
     return this.buildAuthResponse(user);
   }
 
-  buildAuthResponse(user) {
-    const role = roleRepository.findById(user.roleId);
+  async buildAuthResponse(user) {
+    const role = await roleRepository.findById(user.roleId);
     const token = generateToken({
       sub: user.id,
       role: role.name,

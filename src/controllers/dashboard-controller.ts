@@ -4,11 +4,11 @@ const projectService = require("../services/project-service");
 const taskService = require("../services/task-service");
 
 class DashboardController {
-  summary(req) {
-    const projects = projectService.listProjects(req.user);
-    const tasks = taskService.listTasks({ page: 1, limit: 100 }, req.user);
-    const notifications = notificationService.listForUser(req.user.id);
-    const activities = activityLogService.listVisible(req.user).slice(0, 10);
+  async summary(req) {
+    const projects = await projectService.listProjects(req.user);
+    const tasks = await taskService.listTasks({ page: 1, limit: 100 }, req.user);
+    const notifications = await notificationService.listForUser(req.user.id);
+    const activities = (await activityLogService.listVisible(req.user)).slice(0, 10);
     const statusBreakdown = tasks.items.reduce(
       (accumulator, task) => {
         accumulator[task.status] = (accumulator[task.status] || 0) + 1;

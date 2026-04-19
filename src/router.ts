@@ -52,7 +52,7 @@ class Router {
 
       req.params = params;
       if (route.options.authenticated) {
-        authenticate(req);
+        await authenticate(req);
       }
 
       return route.handler(req);

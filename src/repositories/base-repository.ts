@@ -9,37 +9,38 @@ class BaseRepository {
     this.ModelClass = ModelClass;
   }
 
-  all() {
+  async all() {
     return dataStore.findAll(this.collectionName);
   }
 
-  findAll() {
-    return this.all().map((item) => new this.ModelClass(item));
+  async findAll() {
+    const items = await this.all();
+    return items.map((item) => new this.ModelClass(item));
   }
 
-  findById(id) {
-    const item = dataStore.findById(this.collectionName, id);
+  async findById(id) {
+    const item = await dataStore.findById(this.collectionName, id);
     return item ? new this.ModelClass(item) : null;
   }
 
-  create(data) {
-    const created = dataStore.insert(this.collectionName, data);
+  async create(data) {
+    const created = await dataStore.insert(this.collectionName, data);
     return new this.ModelClass(created);
   }
 
-  update(id, updater) {
-    const current = this.findById(id);
+  async update(id, updater) {
+    const current = await this.findById(id);
     if (!current) {
       return null;
     }
 
     const nextEntity = updater(current) || current;
-    const updated = dataStore.update(this.collectionName, id, nextEntity);
+    const updated = await dataStore.update(this.collectionName, id, nextEntity);
     return updated ? new this.ModelClass(updated) : null;
   }
 
-  delete(id) {
-    dataStore.delete(this.collectionName, id);
+  async delete(id) {
+    await dataStore.delete(this.collectionName, id);
   }
 }
 

@@ -6,17 +6,17 @@ class ProjectMemberRepository extends BaseRepository {
     super("projectMembers", ProjectMember);
   }
 
-  findByProjectId(projectId) {
-    return this.findAll().filter((member) => Number(member.projectId) === Number(projectId));
+  async findByProjectId(projectId) {
+    return (await this.findAll()).filter((member) => Number(member.projectId) === Number(projectId));
   }
 
-  findByUserId(userId) {
-    return this.findAll().filter((member) => Number(member.userId) === Number(userId));
+  async findByUserId(userId) {
+    return (await this.findAll()).filter((member) => Number(member.userId) === Number(userId));
   }
 
-  findByProjectAndUser(projectId, userId) {
+  async findByProjectAndUser(projectId, userId) {
     return (
-      this.findAll().find(
+      (await this.findAll()).find(
         (member) => Number(member.projectId) === Number(projectId) && Number(member.userId) === Number(userId)
       ) || null
     );

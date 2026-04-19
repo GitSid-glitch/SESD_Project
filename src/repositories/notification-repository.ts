@@ -6,8 +6,8 @@ class NotificationRepository extends BaseRepository {
     super("notifications", Notification);
   }
 
-  findByUserId(userId) {
-    return this.findAll().filter((notification) => Number(notification.userId) === Number(userId));
+  async findByUserId(userId) {
+    return (await this.findAll()).filter((notification) => Number(notification.userId) === Number(userId));
   }
 }
 

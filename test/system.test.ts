@@ -8,14 +8,15 @@ function fresh(modulePath) {
   return require(modulePath);
 }
 
-function bootSystem(testName) {
-  const dataFile = path.join(process.cwd(), "tmp", `${testName.replace(/\s+/g, "-").toLowerCase()}.json`);
+async function bootSystem(testName) {
+  const dataFile = path.join(process.cwd(), "tmp", `${testName.replace(/\s+/g, "-").toLowerCase()}.sqlite`);
   fs.mkdirSync(path.dirname(dataFile), { recursive: true });
   if (fs.existsSync(dataFile)) {
     fs.unlinkSync(dataFile);
   }
 
   process.env.DATA_FILE = dataFile;
+  delete process.env.DATABASE_URL;
 
   Object.keys(require.cache)
     .filter((cacheKey) => cacheKey.includes(`${path.sep}src${path.sep}`))
@@ -24,7 +25,7 @@ function bootSystem(testName) {
     });
 
   const dataStore = fresh("../src/repositories/data-store");
-  dataStore.initialize();
+  await dataStore.initialize();
 
   const authService = fresh("../src/services/auth-service");
   const projectService = fresh("../src/services/project-service");
@@ -34,7 +35,7 @@ function bootSystem(testName) {
   const userService = fresh("../src/services/user-service");
   const activityLogService = fresh("../src/services/activity-log-service");
 
-  authService.ensureDefaultRoles();
+  await authService.ensureDefaultRoles();
 
   return {
     authService,
@@ -47,31 +48,31 @@ function bootSystem(testName) {
   };
 }
 
-test("manager can create project, sprint, task, and member receives notification", () => {
-  const system = bootSystem("manager flow");
+test("manager can create project, sprint, task, and member receives notification", async () => {
+  const system = await bootSystem("manager flow");
 
-  const manager = system.authService.register({
+  const manager = (await system.authService.register({
     name: "Manager",
     email: "manager@test.local",
     password: "Manager@123",
     roleName: "MANAGER"
-  }).user;
+  })).user;
 
-  const member = system.authService.register({
+  const member = (await system.authService.register({
     name: "Member",
     email: "member@test.local",
     password: "Member@123",
     roleName: "MEMBER"
-  }).user;
+  })).user;
 
-  const project = system.projectService.createProject(
+  const project = await system.projectService.createProject(
     { title: "SESD Platform", description: "Backend-first implementation" },
     manager
   );
 
-  system.projectService.addMember(project.id, member.id, manager);
+  await system.projectService.addMember(project.id, member.id, manager);
 
-  const sprint = system.sprintService.createSprint(
+  const sprint = await system.sprintService.createSprint(
     {
       projectId: project.id,
       name: "Sprint A",
@@ -81,7 +82,7 @@ test("manager can create project, sprint, task, and member receives notification
     manager
   );
 
-  const task = system.taskService.createTask(
+  const task = await system.taskService.createTask(
     {
       projectId: project.id,
       sprintId: sprint.id,
@@ -97,35 +98,35 @@ test("manager can create project, sprint, task, and member receives notification
   assert.equal(sprint.projectId, project.id);
   assert.equal(task.assignedUser.email, "member@test.local");
 
-  const notifications = system.notificationService.listForUser(member.id);
+  const notifications = await system.notificationService.listForUser(member.id);
   assert.ok(notifications.length >= 1);
   assert.ok(notifications.some((notification) => /assigned task/i.test(notification.message)));
 });
 
-test("task status strategy blocks invalid transitions", () => {
-  const system = bootSystem("task transitions");
+test("task status strategy blocks invalid transitions", async () => {
+  const system = await bootSystem("task transitions");
 
-  const manager = system.authService.register({
+  const manager = (await system.authService.register({
     name: "Manager",
     email: "manager2@test.local",
     password: "Manager@123",
     roleName: "MANAGER"
-  }).user;
+  })).user;
 
-  const member = system.authService.register({
+  const member = (await system.authService.register({
     name: "Member",
     email: "member2@test.local",
     password: "Member@123",
     roleName: "MEMBER"
-  }).user;
+  })).user;
 
-  const project = system.projectService.createProject(
+  const project = await system.projectService.createProject(
     { title: "Flow", description: "Transition validation" },
     manager
   );
-  system.projectService.addMember(project.id, member.id, manager);
+  await system.projectService.addMember(project.id, member.id, manager);
 
-  const task = system.taskService.createTask(
+  const task = await system.taskService.createTask(
     {
       projectId: project.id,
       title: "Model task states",
@@ -135,38 +136,39 @@ test("task status strategy blocks invalid transitions", () => {
     manager
   );
 
-  assert.throws(() => {
-    system.taskService.updateTask(task.id, { status: "DONE" }, member);
-  }, /Invalid task status transition/);
+  await assert.rejects(
+    system.taskService.updateTask(task.id, { status: "DONE" }, member),
+    /Invalid task status transition/
+  );
 
-  const updated = system.taskService.updateTask(task.id, { status: "IN_PROGRESS" }, member);
+  const updated = await system.taskService.updateTask(task.id, { status: "IN_PROGRESS" }, member);
   assert.equal(updated.status, "IN_PROGRESS");
 });
 
-test("members can update assigned task status but cannot edit task definition", () => {
-  const system = bootSystem("member restrictions");
+test("members can update assigned task status but cannot edit task definition", async () => {
+  const system = await bootSystem("member restrictions");
 
-  const manager = system.authService.register({
+  const manager = (await system.authService.register({
     name: "Manager",
     email: "manager3@test.local",
     password: "Manager@123",
     roleName: "MANAGER"
-  }).user;
+  })).user;
 
-  const member = system.authService.register({
+  const member = (await system.authService.register({
     name: "Member",
     email: "member4@test.local",
     password: "Member@123",
     roleName: "MEMBER"
-  }).user;
+  })).user;
 
-  const project = system.projectService.createProject(
+  const project = await system.projectService.createProject(
     { title: "Restrictions", description: "Member execution rules" },
     manager
   );
-  system.projectService.addMember(project.id, member.id, manager);
+  await system.projectService.addMember(project.id, member.id, manager);
 
-  const task = system.taskService.createTask(
+  const task = await system.taskService.createTask(
     {
       projectId: project.id,
       title: "Implement UI polish",
@@ -176,74 +178,75 @@ test("members can update assigned task status but cannot edit task definition", 
     manager
   );
 
-  const progressed = system.taskService.updateTask(task.id, { status: "IN_PROGRESS" }, member);
+  const progressed = await system.taskService.updateTask(task.id, { status: "IN_PROGRESS" }, member);
   assert.equal(progressed.status, "IN_PROGRESS");
 
-  assert.throws(() => {
-    system.taskService.updateTask(task.id, { title: "Completely different title" }, member);
-  }, /Members can only update the status/);
+  await assert.rejects(
+    system.taskService.updateTask(task.id, { title: "Completely different title" }, member),
+    /Members can only update the status/
+  );
 
-  const comment = system.taskService.addComment(task.id, "This is blocked on final copy review.", member);
+  const comment = await system.taskService.addComment(task.id, "This is blocked on final copy review.", member);
   assert.equal(comment.content, "This is blocked on final copy review.");
 
-  const reloaded = system.taskService.getTaskById(task.id, manager);
+  const reloaded = await system.taskService.getTaskById(task.id, manager);
   assert.equal(reloaded.comments[0].author.name, "Member");
 });
 
-test("admin can assign roles and user listing returns enriched role names", () => {
-  const system = bootSystem("admin role assignment");
+test("admin can assign roles and user listing returns enriched role names", async () => {
+  const system = await bootSystem("admin role assignment");
 
-  const admin = system.authService.register({
+  const admin = (await system.authService.register({
     name: "Admin",
     email: "admin@test.local",
     password: "Admin@123",
     roleName: "ADMIN"
-  }).user;
+  })).user;
 
-  const member = system.authService.register({
+  const member = (await system.authService.register({
     name: "Member",
     email: "member3@test.local",
     password: "Member@123",
     roleName: "MEMBER"
-  }).user;
+  })).user;
 
-  const updated = system.userService.assignRole(member.id, "MANAGER", admin);
+  const updated = await system.userService.assignRole(member.id, "MANAGER", admin);
   assert.equal(updated.role, "MANAGER");
 
-  const users = system.userService.listUsers();
+  const users = await system.userService.listUsers();
   assert.equal(users.length, 2);
   assert.equal(users.find((user) => user.email === "member3@test.local").role, "MANAGER");
 });
 
-test("backend validations reject invalid sprint dates and cross-project sprint assignment", () => {
-  const system = bootSystem("backend validations");
+test("backend validations reject invalid sprint dates and cross-project sprint assignment", async () => {
+  const system = await bootSystem("backend validations");
 
-  const manager = system.authService.register({
+  const manager = (await system.authService.register({
     name: "Manager",
     email: "manager4@test.local",
     password: "Manager@123",
     roleName: "MANAGER"
-  }).user;
+  })).user;
 
-  const member = system.authService.register({
+  const member = (await system.authService.register({
     name: "Member",
     email: "member5@test.local",
     password: "Member@123",
     roleName: "MEMBER"
-  }).user;
+  })).user;
 
-  const projectA = system.projectService.createProject(
+  const projectA = await system.projectService.createProject(
     { title: "Project Alpha", description: "First valid project description" },
     manager
   );
-  const projectB = system.projectService.createProject(
+  const projectB = await system.projectService.createProject(
     { title: "Project Beta", description: "Second valid project description" },
     manager
   );
 
-  system.projectService.addMember(projectA.id, member.id, manager);
+  await system.projectService.addMember(projectA.id, member.id, manager);
 
-  assert.throws(() => {
+  await assert.rejects(
     system.sprintService.createSprint(
       {
         projectId: projectA.id,
@@ -252,10 +255,11 @@ test("backend validations reject invalid sprint dates and cross-project sprint a
         endDate: "2026-05-01"
       },
       manager
-    );
-  }, /end date cannot be before/i);
+    ),
+    /end date cannot be before/i
+  );
 
-  const sprintB = system.sprintService.createSprint(
+  const sprintB = await system.sprintService.createSprint(
     {
       projectId: projectB.id,
       name: "Project B Sprint",
@@ -265,7 +269,7 @@ test("backend validations reject invalid sprint dates and cross-project sprint a
     manager
   );
 
-  assert.throws(() => {
+  await assert.rejects(
     system.taskService.createTask(
       {
         projectId: projectA.id,
@@ -275,34 +279,35 @@ test("backend validations reject invalid sprint dates and cross-project sprint a
         assignedTo: member.id
       },
       manager
-    );
-  }, /must belong to the selected project/i);
+    ),
+    /must belong to the selected project/i
+  );
 });
 
-test("project member removal enforces task reassignment first", () => {
-  const system = bootSystem("member removal rules");
+test("project member removal enforces task reassignment first", async () => {
+  const system = await bootSystem("member removal rules");
 
-  const manager = system.authService.register({
+  const manager = (await system.authService.register({
     name: "Manager",
     email: "manager5@test.local",
     password: "Manager@123",
     roleName: "MANAGER"
-  }).user;
+  })).user;
 
-  const member = system.authService.register({
+  const member = (await system.authService.register({
     name: "Member",
     email: "member6@test.local",
     password: "Member@123",
     roleName: "MEMBER"
-  }).user;
+  })).user;
 
-  const project = system.projectService.createProject(
+  const project = await system.projectService.createProject(
     { title: "Removal Test", description: "Ensure members cannot be removed unsafely" },
     manager
   );
-  system.projectService.addMember(project.id, member.id, manager);
+  await system.projectService.addMember(project.id, member.id, manager);
 
-  const task = system.taskService.createTask(
+  const task = await system.taskService.createTask(
     {
       projectId: project.id,
       title: "Assigned Task",
@@ -312,40 +317,43 @@ test("project member removal enforces task reassignment first", () => {
     manager
   );
 
-  assert.throws(() => {
-    system.projectService.removeMember(project.id, member.id, manager);
-  }, /Reassign them before removal/i);
+  await assert.rejects(
+    system.projectService.removeMember(project.id, member.id, manager),
+    /Reassign them before removal/i
+  );
 
-  system.taskService.updateTask(task.id, { assignedTo: null }, manager);
-  const result = system.projectService.removeMember(project.id, member.id, manager);
+  await system.taskService.updateTask(task.id, { assignedTo: null }, manager);
+  const result = await system.projectService.removeMember(project.id, member.id, manager);
   assert.equal(result.removed, true);
 });
 
-test("admin deactivation rules protect self-deactivation and last active admin", () => {
-  const system = bootSystem("admin deactivation rules");
+test("admin deactivation rules protect self-deactivation and last active admin", async () => {
+  const system = await bootSystem("admin deactivation rules");
 
-  const adminA = system.authService.register({
+  const adminA = (await system.authService.register({
     name: "Admin A",
     email: "admin-a@test.local",
     password: "Admin@123",
     roleName: "ADMIN"
-  }).user;
+  })).user;
 
-  assert.throws(() => {
-    system.userService.softDelete(adminA.id, adminA);
-  }, /cannot deactivate their own account/i);
+  await assert.rejects(
+    system.userService.softDelete(adminA.id, adminA),
+    /cannot deactivate their own account/i
+  );
 
-  const adminB = system.authService.register({
+  const adminB = (await system.authService.register({
     name: "Admin B",
     email: "admin-b@test.local",
     password: "Admin@123",
     roleName: "ADMIN"
-  }).user;
+  })).user;
 
-  const deleted = system.userService.softDelete(adminB.id, adminA);
+  const deleted = await system.userService.softDelete(adminB.id, adminA);
   assert.equal(deleted.isDeleted, true);
 
-  assert.throws(() => {
-    system.userService.softDelete(adminA.id, adminB);
-  }, /cannot deactivate their own account|At least one active admin/i);
+  await assert.rejects(
+    system.userService.softDelete(adminA.id, adminB),
+    /cannot deactivate their own account|At least one active admin/i
+  );
 });

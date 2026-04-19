@@ -6,8 +6,8 @@ class CommentRepository extends BaseRepository {
     super("comments", Comment);
   }
 
-  findByTaskId(taskId) {
-    return this.findAll().filter((comment) => Number(comment.taskId) === Number(taskId));
+  async findByTaskId(taskId) {
+    return (await this.findAll()).filter((comment) => Number(comment.taskId) === Number(taskId));
   }
 }
 

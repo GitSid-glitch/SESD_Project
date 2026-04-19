@@ -6,8 +6,8 @@ class SprintRepository extends BaseRepository {
     super("sprints", Sprint);
   }
 
-  findByProjectId(projectId) {
-    return this.findAll().filter((sprint) => Number(sprint.projectId) === Number(projectId));
+  async findByProjectId(projectId) {
+    return (await this.findAll()).filter((sprint) => Number(sprint.projectId) === Number(projectId));
   }
 }
 

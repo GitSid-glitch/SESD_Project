@@ -12,11 +12,11 @@ const projectService = require("./project-service");
 const taskValidator = require("./validators/task-validator");
 
 class TaskService extends BaseService {
-  listTasks(filters, actor) {
-    let tasks = taskRepository.findVisibleTasks();
+  async listTasks(filters, actor) {
+    let tasks = await taskRepository.findVisibleTasks();
 
     if (actor.role !== "ADMIN") {
-      const memberships = new Set(projectMemberRepository.findByUserId(actor.id).map((member) => member.projectId));
+      const memberships = new Set((await projectMemberRepository.findByUserId(actor.id)).map((member) => member.projectId));
       tasks = tasks.filter(
         (task) => task.createdBy === actor.id || task.assignedTo === actor.id || memberships.has(task.projectId)
       );
@@ -38,7 +38,7 @@ class TaskService extends BaseService {
     const paginated = tasks.slice(startIndex, startIndex + limit);
 
     return {
-      items: paginated.map((task) => this.enrichTask(task)),
+      items: await Promise.all(paginated.map((task) => this.enrichTask(task))),
       pagination: {
         page,
         limit,
@@ -47,48 +47,48 @@ class TaskService extends BaseService {
     };
   }
 
-  getTaskById(taskId, actor) {
-    const task = this.ensureVisibleTask(taskId);
+  async getTaskById(taskId, actor) {
+    const task = await this.ensureVisibleTask(taskId);
 
-    projectService.ensureProjectAccess(task.projectId, actor);
+    await projectService.ensureProjectAccess(task.projectId, actor);
     return this.enrichTask(task);
   }
 
-  createTask(payload, actor) {
+  async createTask(payload, actor) {
     projectService.ensureManagerOrAdmin(actor);
-    projectService.ensureProjectAccess(payload.projectId, actor);
+    await projectService.ensureProjectAccess(payload.projectId, actor);
     taskValidator.validate(payload);
 
-    this.ensureFound(projectRepository.findById(payload.projectId), "Project not found");
+    this.ensureFound(await projectRepository.findById(payload.projectId), "Project not found");
 
     if (payload.sprintId) {
-      const sprint = sprintRepository.findById(payload.sprintId);
+      const sprint = await sprintRepository.findById(payload.sprintId);
       this.ensureFound(sprint, "Sprint not found");
       this.ensure(Number(sprint.projectId) === Number(payload.projectId), 400, "Task sprint must belong to the selected project");
     }
 
     if (payload.assignedTo) {
-      this.ensureAssignableMember(payload.projectId, payload.assignedTo);
+      await this.ensureAssignableMember(payload.projectId, payload.assignedTo);
     }
 
-    const task = taskRepository.create({
+    const task = await taskRepository.create({
       ...payload,
       createdBy: actor.id
     });
 
-    activityLogService.logAction(`Created task ${task.title}`, actor.id);
+    await activityLogService.logAction(`Created task ${task.title}`, actor.id);
 
     if (task.assignedTo) {
-      notificationService.sendNotification("IN_APP", `You were assigned task "${task.title}"`, task.assignedTo);
+      await notificationService.sendNotification("IN_APP", `You were assigned task "${task.title}"`, task.assignedTo);
     }
 
     return this.enrichTask(task);
   }
 
-  updateTask(taskId, payload, actor) {
-    const existingTask = this.ensureVisibleTask(taskId);
+  async updateTask(taskId, payload, actor) {
+    const existingTask = await this.ensureVisibleTask(taskId);
 
-    projectService.ensureProjectAccess(existingTask.projectId, actor);
+    await projectService.ensureProjectAccess(existingTask.projectId, actor);
 
     const canManageTask = ["ADMIN", "MANAGER"].includes(actor.role) || existingTask.isOwnedBy(actor.id);
     const isAssignee = existingTask.isAssignedTo(actor.id);
@@ -107,15 +107,15 @@ class TaskService extends BaseService {
     }
 
     if (payload.assignedTo) {
-      this.ensureAssignableMember(existingTask.projectId, payload.assignedTo);
+      await this.ensureAssignableMember(existingTask.projectId, payload.assignedTo);
     }
 
     if (payload.sprintId) {
-      const sprint = sprintRepository.findById(payload.sprintId);
+      const sprint = await sprintRepository.findById(payload.sprintId);
       this.ensure(sprint && Number(sprint.projectId) === Number(existingTask.projectId), 400, "Updated sprint must belong to the same project as the task");
     }
 
-    const updatedTask = taskRepository.update(taskId, (task) => {
+    const updatedTask = await taskRepository.update(taskId, (task) => {
       task.updateDetails(payload);
       if (payload.status) {
         task.updateStatus(payload.status);
@@ -126,81 +126,81 @@ class TaskService extends BaseService {
       return task;
     });
 
-    activityLogService.logAction(`Updated task ${updatedTask.title}`, actor.id);
+    await activityLogService.logAction(`Updated task ${updatedTask.title}`, actor.id);
 
     if (payload.assignedTo && payload.assignedTo !== existingTask.assignedTo) {
-      notificationService.sendNotification("IN_APP", `You were assigned task "${updatedTask.title}"`, payload.assignedTo);
+      await notificationService.sendNotification("IN_APP", `You were assigned task "${updatedTask.title}"`, payload.assignedTo);
     }
 
     if (payload.status && payload.status !== existingTask.status) {
       const recipients = new Set([existingTask.createdBy, existingTask.assignedTo].filter(Boolean));
       recipients.delete(actor.id);
-      recipients.forEach((userId) => {
+      await Promise.all(Array.from(recipients).map((userId) =>
         notificationService.sendNotification(
           "IN_APP",
           `Task "${updatedTask.title}" moved to ${updatedTask.status.replaceAll("_", " ")}`,
           userId
-        );
-      });
+        )
+      ));
     }
 
     return this.enrichTask(updatedTask);
   }
 
-  softDelete(taskId, actor) {
-    const task = this.ensureVisibleTask(taskId);
+  async softDelete(taskId, actor) {
+    const task = await this.ensureVisibleTask(taskId);
 
     projectService.ensureManagerOrAdmin(actor);
-    projectService.ensureProjectAccess(task.projectId, actor);
+    await projectService.ensureProjectAccess(task.projectId, actor);
 
-    const deletedTask = taskRepository.update(taskId, (entry) => {
+    const deletedTask = await taskRepository.update(taskId, (entry) => {
       entry.softDelete();
       return entry;
     });
 
-    activityLogService.logAction(`Soft deleted task ${deletedTask.title}`, actor.id);
+    await activityLogService.logAction(`Soft deleted task ${deletedTask.title}`, actor.id);
     return this.enrichTask(deletedTask);
   }
 
-  addComment(taskId, content, actor) {
-    const task = this.ensureVisibleTask(taskId);
+  async addComment(taskId, content, actor) {
+    const task = await this.ensureVisibleTask(taskId);
 
-    projectService.ensureProjectAccess(task.projectId, actor);
+    await projectService.ensureProjectAccess(task.projectId, actor);
 
-    const comment = commentRepository.create({
+    const comment = await commentRepository.create({
       content,
       taskId,
       userId: actor.id
     });
 
-    activityLogService.logAction(`Commented on task ${task.title}`, actor.id);
+    await activityLogService.logAction(`Commented on task ${task.title}`, actor.id);
 
     const recipients = new Set([task.assignedTo, task.createdBy].filter(Boolean));
     recipients.delete(actor.id);
-    recipients.forEach((userId) => {
-      notificationService.sendNotification("IN_APP", `New comment added to "${task.title}"`, userId);
-    });
+    await Promise.all(Array.from(recipients).map((userId) =>
+      notificationService.sendNotification("IN_APP", `New comment added to "${task.title}"`, userId)
+    ));
 
     return comment;
   }
 
-  ensureAssignableMember(projectId, userId) {
-    const user = userRepository.findById(userId);
-    const member = projectMemberRepository.findByProjectAndUser(projectId, userId);
+  async ensureAssignableMember(projectId, userId) {
+    const user = await userRepository.findById(userId);
+    const member = await projectMemberRepository.findByProjectAndUser(projectId, userId);
     this.ensure(user && !user.isDeleted && member, 400, "Assigned user must belong to the project");
   }
 
-  ensureVisibleTask(taskId) {
-    const task = taskRepository.findById(taskId);
+  async ensureVisibleTask(taskId) {
+    const task = await taskRepository.findById(taskId);
     this.ensure(task && !task.deleted, 404, "Task not found");
     return task;
   }
 
-  enrichTask(task) {
-    const assignee = task.assignedTo ? userRepository.findById(task.assignedTo) : null;
-    const creator = userRepository.findById(task.createdBy);
-    const comments = commentRepository.findByTaskId(task.id).map((comment) => {
-      const author = userRepository.findById(comment.userId);
+  async enrichTask(task) {
+    const assignee = task.assignedTo ? await userRepository.findById(task.assignedTo) : null;
+    const creator = await userRepository.findById(task.createdBy);
+    const comments = await Promise.all((await commentRepository.findByTaskId(task.id)).map(async (comment) => {
+      const author = await userRepository.findById(comment.userId);
       return {
         ...comment,
         author: author
@@ -211,7 +211,7 @@ class TaskService extends BaseService {
             }
           : null
       };
-    });
+    }));
 
     return {
       ...task,

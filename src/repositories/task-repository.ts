@@ -6,12 +6,12 @@ class TaskRepository extends BaseRepository {
     super("tasks", Task);
   }
 
-  findByProjectId(projectId) {
-    return this.findAll().filter((task) => Number(task.projectId) === Number(projectId) && !task.deleted);
+  async findByProjectId(projectId) {
+    return (await this.findAll()).filter((task) => Number(task.projectId) === Number(projectId) && !task.deleted);
   }
 
-  findVisibleTasks() {
-    return this.findAll().filter((task) => !task.deleted);
+  async findVisibleTasks() {
+    return (await this.findAll()).filter((task) => !task.deleted);
   }
 }
 

@@ -6,8 +6,8 @@ class RoleRepository extends BaseRepository {
     super("roles", Role);
   }
 
-  findByName(name) {
-    const item = this.all().find((role) => role.name === name);
+  async findByName(name) {
+    const item = (await this.all()).find((role) => role.name === name);
     return item ? new Role(item) : null;
   }
 }

@@ -6,30 +6,30 @@ const projectService = require("./project-service");
 const sprintValidator = require("./validators/sprint-validator");
 
 class SprintService extends BaseService {
-  listByProject(projectId, actor) {
-    projectService.ensureProjectAccess(projectId, actor);
+  async listByProject(projectId, actor) {
+    await projectService.ensureProjectAccess(projectId, actor);
     return sprintRepository.findByProjectId(projectId);
   }
 
-  createSprint(payload, actor) {
+  async createSprint(payload, actor) {
     projectService.ensureManagerOrAdmin(actor);
-    projectService.ensureProjectAccess(payload.projectId, actor);
+    await projectService.ensureProjectAccess(payload.projectId, actor);
     sprintValidator.validate(payload);
 
-    this.ensureFound(projectRepository.findById(payload.projectId), "Project not found");
+    this.ensureFound(await projectRepository.findById(payload.projectId), "Project not found");
 
-    const sprint = sprintRepository.create(payload);
-    activityLogService.logAction(`Created sprint ${sprint.name}`, actor.id);
+    const sprint = await sprintRepository.create(payload);
+    await activityLogService.logAction(`Created sprint ${sprint.name}`, actor.id);
     return sprint;
   }
 
-  updateStatus(id, status, actor) {
-    const sprint = this.ensureFound(sprintRepository.findById(id), "Sprint not found");
+  async updateStatus(id, status, actor) {
+    const sprint = this.ensureFound(await sprintRepository.findById(id), "Sprint not found");
 
     projectService.ensureManagerOrAdmin(actor);
-    projectService.ensureProjectAccess(sprint.projectId, actor);
+    await projectService.ensureProjectAccess(sprint.projectId, actor);
 
-    const updatedSprint = sprintRepository.update(id, (entry) => {
+    const updatedSprint = await sprintRepository.update(id, (entry) => {
       if (status === "ACTIVE") {
         entry.startSprint();
       } else if (status === "COMPLETED") {
@@ -42,7 +42,7 @@ class SprintService extends BaseService {
       return entry;
     });
 
-    activityLogService.logAction(`Updated sprint ${updatedSprint.name} to ${status}`, actor.id);
+    await activityLogService.logAction(`Updated sprint ${updatedSprint.name} to ${status}`, actor.id);
     return updatedSprint;
   }
 }

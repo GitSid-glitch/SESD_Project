@@ -2,7 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package.json tsconfig.json tsconfig.frontend.json ./
+COPY package.json package-lock.json tsconfig.json tsconfig.frontend.json ./
 RUN npm install
 
 COPY src ./src
@@ -19,4 +19,4 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["node", "dist/src/server.js"]
+CMD ["sh", "-c", "node dist/src/scripts/seed.js && node dist/src/server.js"]

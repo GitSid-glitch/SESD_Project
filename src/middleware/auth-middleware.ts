@@ -11,19 +11,19 @@ function getBearerToken(req) {
   return authHeader.slice("Bearer ".length);
 }
 
-function authenticate(req) {
+async function authenticate(req) {
   const token = getBearerToken(req);
   const payload = verifyToken(token);
   if (!payload) {
     throw new HttpError(401, "Authentication required");
   }
 
-  const user = userRepository.findById(payload.sub);
+  const user = await userRepository.findById(payload.sub);
   if (!user || user.isDeleted) {
     throw new HttpError(401, "Authenticated user no longer exists");
   }
 
-  const role = roleRepository.findById(user.roleId);
+  const role = await roleRepository.findById(user.roleId);
   req.user = {
     id: user.id,
     email: user.email,

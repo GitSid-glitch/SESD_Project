@@ -6,8 +6,8 @@ class UserRepository extends BaseRepository {
     super("users", User);
   }
 
-  findByEmail(email) {
-    const item = this.all().find((user) => user.email.toLowerCase() === email.toLowerCase());
+  async findByEmail(email) {
+    const item = (await this.all()).find((user) => user.email.toLowerCase() === email.toLowerCase());
     return item ? new User(item) : null;
   }
 }

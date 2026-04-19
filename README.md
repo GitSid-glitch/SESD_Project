@@ -19,7 +19,7 @@ This repository now includes:
 
 - Backend: Node.js + TypeScript
 - Frontend: HTML, CSS, TypeScript-compiled browser script
-- Persistence: SQLite database
+- Persistence: PostgreSQL-ready datastore layer using `DATABASE_URL`, with SQLite fallback for local file-backed runs
 - Auth: signed token-based authentication
 - Testing: Node built-in test runner with TypeScript-compiled tests
 
@@ -57,14 +57,14 @@ npm run build
 
 ## Deployment
 
-This project is now deployment-ready for simple Node hosts.
+This project is now deployment-ready for Render or any Node host.
 
 Environment variables:
 
 - `HOST=0.0.0.0`
 - `PORT=3000` or the platform-provided port
 - `TOKEN_SECRET=<secure-secret>`
-- `DATA_FILE=data/database.json`
+- `DATABASE_URL=postgresql://postgres:<password>@db.<project>.supabase.co:5432/postgres?sslmode=require`
 
 Options included in the repo:
 
@@ -74,7 +74,8 @@ Options included in the repo:
 
 Important note:
 
-- The current app persists data in a local SQLite database file. This is a real DBMS and a better deployment option than the earlier JSON datastore, though PostgreSQL would still be stronger for multi-user production hosting.
+- For deployment, use a real PostgreSQL database such as Supabase and set `DATABASE_URL`.
+- If `DATABASE_URL` is omitted, the app falls back to a local SQLite file at `data/database.sqlite` for local development.
 
 ## Demo Credentials
 
@@ -144,6 +145,7 @@ test/                    Automated tests
 
 ## Important Notes
 
-- The project uses a local SQLite database so it runs without external setup.
-- Data is stored in `data/database.sqlite` after seeding or using the app.
+- The app seeds demo users automatically when `node dist/src/scripts/seed.js` runs.
+- For Render with Supabase, set `DATABASE_URL`, `HOST=0.0.0.0`, `PORT=10000`, and a strong `TOKEN_SECRET`.
+- Local development can still use SQLite fallback if no `DATABASE_URL` is provided.
 - The backend codebase is intentionally the major part of the implementation to match the SESD backend-heavy evaluation weightage.

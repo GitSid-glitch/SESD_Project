@@ -8,9 +8,6 @@ const dataStore = require("./repositories/data-store");
 const authService = require("./services/auth-service");
 const { json, noContent, parseBody, parseQuery } = require("./utils/http");
 
-dataStore.initialize();
-authService.ensureDefaultRoles();
-
 const publicDir = path.join(__dirname, "..", "..", "public");
 
 function serveStaticFile(req, res) {
@@ -62,6 +59,13 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(config.port, config.host, () => {
-  console.log(`Smart Project Management System running on http://${config.host}:${config.port}`);
-});
+async function startServer() {
+  await dataStore.initialize();
+  await authService.ensureDefaultRoles();
+
+  server.listen(config.port, config.host, () => {
+    console.log(`Smart Project Management System running on http://${config.host}:${config.port}`);
+  });
+}
+
+startServer();
