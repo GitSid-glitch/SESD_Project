@@ -1,4 +1,5 @@
 data/database.json
+data/database.sqlite
 node_modules
 .DS_Store
 diagrams/.DS_Store

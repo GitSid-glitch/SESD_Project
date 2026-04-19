@@ -19,7 +19,7 @@ This repository now includes:
 
 - Backend: Node.js + TypeScript
 - Frontend: HTML, CSS, TypeScript-compiled browser script
-- Persistence: JSON-based local datastore
+- Persistence: SQLite database
 - Auth: signed token-based authentication
 - Testing: Node built-in test runner with TypeScript-compiled tests
 
@@ -74,7 +74,7 @@ Options included in the repo:
 
 Important note:
 
-- The current app persists data in a local JSON file. This works for demos and small single-instance deployments, but a real production deployment should eventually move to PostgreSQL or another DBMS.
+- The current app persists data in a local SQLite database file. This is a real DBMS and a better deployment option than the earlier JSON datastore, though PostgreSQL would still be stronger for multi-user production hosting.
 
 ## Demo Credentials
 
@@ -144,6 +144,6 @@ test/                    Automated tests
 
 ## Important Notes
 
-- The project uses a local JSON datastore so it runs without external setup.
-- Data is stored in `data/database.json` after seeding or using the app.
+- The project uses a local SQLite database so it runs without external setup.
+- Data is stored in `data/database.sqlite` after seeding or using the app.
 - The backend codebase is intentionally the major part of the implementation to match the SESD backend-heavy evaluation weightage.
