@@ -1,5 +1,7 @@
 data/database.json
 node_modules
 .DS_Store
+diagrams/.DS_Store
 tmp
 dist
+public/app.js
